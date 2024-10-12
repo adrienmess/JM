@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>JAMAL MONTGOMERY - VOODOO FOOD </title>
+    <title>JAMAL MONTGOMERY - VOODOO FOOD</title>
     <!-- Inclusion de React, ReactDOM et Babel via CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -16,7 +16,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #ffffff;
+            background-color: #FFFEF5; /* Couleur crème très légère */
             font-family: 'Montserrat', sans-serif;
             overflow-x: hidden;
         }
@@ -113,11 +113,12 @@
         .fixed-element {
             position: fixed;
             z-index: 9999;
-            width: 14%; /* Réduction de la taille de 30% */
+            width: 14%; /* Taille réduite de 30% */
             opacity: 0;
             pointer-events: none;
             transition: opacity 1s ease-in-out, filter 1s ease-in-out;
             filter: blur(10px);
+            mix-blend-mode: difference; /* Effet de fusion inversé */
         }
     </style>
     <!-- Script pour désactiver le clic droit -->
@@ -149,56 +150,81 @@
                 'https://www.zupimages.net/up/24/41/mnyg.png'
             ];
 
+            const positionsRef = React.useRef([]);
+
+            function getNonOverlappingPosition() {
+                let newPosition;
+                let attempts = 0;
+                do {
+                    newPosition = getRandomPosition();
+                    attempts++;
+                } while (positionsRef.current.some(pos => isOverlapping(pos, newPosition)) && attempts < 10);
+                return newPosition;
+            }
+
+            function addPosition(position) {
+                positionsRef.current.push(position);
+            }
+
+            function removePosition(position) {
+                positionsRef.current = positionsRef.current.filter(pos => pos !== position);
+            }
+
             return (
                 <>
                     {fixedImages.map((src, index) => (
-                        <FixedImage key={index} src={src} index={index} total={fixedImages.length} />
+                        <FixedImage
+                            key={index}
+                            src={src}
+                            index={index}
+                            total={fixedImages.length}
+                            getNonOverlappingPosition={getNonOverlappingPosition}
+                            addPosition={addPosition}
+                            removePosition={removePosition}
+                        />
                     ))}
                 </>
             );
         }
 
-        function FixedImage({ src, index, total }) {
-            const [position, setPosition] = React.useState(getRandomPosition());
+        function FixedImage({ src, index, total, getNonOverlappingPosition, addPosition, removePosition }) {
+            const [position, setPosition] = React.useState({});
             const [visible, setVisible] = React.useState(false);
 
             React.useEffect(() => {
                 let timeoutId;
+                let currentPosition;
 
                 function showImage() {
-                    let newPosition;
                     let attempts = 0;
                     do {
-                        newPosition = getRandomPosition();
+                        currentPosition = getNonOverlappingPosition();
                         attempts++;
-                    } while (isOverlapping(newPosition) && attempts < 10);
-                    setPosition(newPosition);
-                    setVisible(true);
+                    } while (attempts < 10 && !currentPosition);
 
-                    // Afficher l'image pendant une durée aléatoire entre 3 et 5 secondes
-                    const visibleDuration = Math.random() * 2000 + 3000;
-                    setTimeout(() => {
-                        setVisible(false);
-                        // Attendre un délai aléatoire avant de réafficher
-                        const invisibleDuration = Math.random() * 3000 + 2000;
-                        timeoutId = setTimeout(showImage, invisibleDuration);
-                    }, visibleDuration);
+                    if (currentPosition) {
+                        setPosition(currentPosition);
+                        addPosition(currentPosition);
+                        setVisible(true);
+
+                        const visibleDuration = Math.random() * 2000 + 3000;
+                        setTimeout(() => {
+                            setVisible(false);
+                            removePosition(currentPosition);
+                            const invisibleDuration = Math.random() * 3000 + 2000;
+                            timeoutId = setTimeout(showImage, invisibleDuration);
+                        }, visibleDuration);
+                    }
                 }
 
-                // Démarrer le cycle avec un délai initial
-                const initialDelay = index * 1000; // Démarrage échelonné
+                const initialDelay = index * 1000;
                 timeoutId = setTimeout(showImage, initialDelay);
 
-                return () => clearTimeout(timeoutId);
+                return () => {
+                    clearTimeout(timeoutId);
+                    removePosition(position);
+                };
             }, []);
-
-            // Fonction pour vérifier le chevauchement (simplifiée)
-            function isOverlapping(newPosition) {
-                // Simplification : Étant donné que les images sont réparties aléatoirement,
-                // et de petite taille, le chevauchement complet est peu probable.
-                // Pour une détection précise, il faudrait conserver les positions des autres images.
-                return false;
-            }
 
             return (
                 <img
@@ -220,6 +246,51 @@
             return {
                 top: top,
                 left: left,
+            };
+        }
+
+        function isOverlapping(pos1, pos2) {
+            const size = 14; // Taille en pourcentage
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            const width = screenWidth * (size / 100);
+            const height = width; // Supposons que les images sont carrées
+
+            const rect1 = getRectFromPosition(pos1, width, height);
+            const rect2 = getRectFromPosition(pos2, width, height);
+
+            return !(
+                rect1.right < rect2.left ||
+                rect1.left > rect2.right ||
+                rect1.bottom < rect2.top ||
+                rect1.top > rect2.bottom
+            );
+        }
+
+        function getRectFromPosition(pos, width, height) {
+            let top = 0, left = 0;
+            if (pos.top !== undefined) {
+                if (typeof pos.top === 'string' && pos.top.endsWith('%')) {
+                    top = (parseFloat(pos.top) / 100) * window.innerHeight;
+                } else {
+                    top = parseFloat(pos.top);
+                }
+            }
+
+            if (pos.left !== undefined) {
+                if (typeof pos.left === 'string' && pos.left.endsWith('%')) {
+                    left = (parseFloat(pos.left) / 100) * window.innerWidth;
+                } else {
+                    left = parseFloat(pos.left);
+                }
+            }
+
+            return {
+                top: top,
+                left: left,
+                bottom: top + height,
+                right: left + width,
             };
         }
 
