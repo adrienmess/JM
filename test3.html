@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>JAMAL MONTGOMERY - Directeur Artistique</title>
+    <!-- Inclusion de React, ReactDOM et Babel via CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Importation des polices Google Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+    </style>
+    <style>
+        /* Styles CSS */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Roboto Mono', monospace;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            padding: 2em;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 6vw;
+            font-weight: bold;
+            color: #FF5722;
+            transform: rotate(-5deg);
+            margin: 0.5em 0;
+        }
+
+        .header h2 {
+            font-size: 4vw;
+            color: #2196F3;
+            transform: rotate(5deg);
+            margin: 0.5em 0;
+        }
+
+        .header h3, .header h4 {
+            font-size: 1.5vw;
+            color: #000;
+            margin: 0.5em 0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 10vw;
+            }
+            .header h2 {
+                font-size: 7vw;
+            }
+            .header h3, .header h4 {
+                font-size: 3vw;
+            }
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1em;
+            padding: 2em;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            transition: opacity 1s ease-in-out;
+        }
+
+        @media (min-width: 768px) {
+            .gallery {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .gallery {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .footer {
+            padding: 2em;
+            text-align: center;
+            font-size: 0.8em;
+            color: #777;
+        }
+
+        /* Styles pour les éléments fixes en superposition */
+        .fixed-element {
+            position: fixed;
+            z-index: 9999;
+            width: 14%; /* Réduction de la taille de 30% */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease-in-out, filter 1s ease-in-out;
+            filter: blur(10px);
+        }
+    </style>
+    <!-- Script pour désactiver le clic droit -->
+    <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+    <!-- Ajout de data-presets="env,react" -->
+    <script type="text/babel" data-presets="env,react">
+        // Code JSX
+        function App() {
+            return (
+                <div className="container">
+                    <FixedElements />
+                    <Header />
+                    <Gallery />
+                    <Footer />
+                </div>
+            );
+        }
+
+        function FixedElements() {
+            const fixedImages = [
+                'https://www.zupimages.net/up/24/41/3ln2.png',
+                'https://www.zupimages.net/up/24/41/5vx9.png',
+                'https://www.zupimages.net/up/24/41/hjak.png',
+                'https://www.zupimages.net/up/24/41/mnyg.png'
+            ];
+
+            return (
+                <>
+                    {fixedImages.map((src, index) => (
+                        <FixedImage key={index} src={src} index={index} total={fixedImages.length} />
+                    ))}
+                </>
+            );
+        }
+
+        function FixedImage({ src, index, total }) {
+            const [position, setPosition] = React.useState(getRandomPosition());
+            const [visible, setVisible] = React.useState(false);
+
+            React.useEffect(() => {
+                let timeoutId;
+
+                function showImage() {
+                    let newPosition;
+                    let attempts = 0;
+                    do {
+                        newPosition = getRandomPosition();
+                        attempts++;
+                    } while (isOverlapping(newPosition) && attempts < 10);
+                    setPosition(newPosition);
+                    setVisible(true);
+
+                    // Afficher l'image pendant une durée aléatoire entre 3 et 5 secondes
+                    const visibleDuration = Math.random() * 2000 + 3000;
+                    setTimeout(() => {
+                        setVisible(false);
+                        // Attendre un délai aléatoire avant de réafficher
+                        const invisibleDuration = Math.random() * 3000 + 2000;
+                        timeoutId = setTimeout(showImage, invisibleDuration);
+                    }, visibleDuration);
+                }
+
+                // Démarrer le cycle avec un délai initial
+                const initialDelay = index * 1000; // Démarrage échelonné
+                timeoutId = setTimeout(showImage, initialDelay);
+
+                return () => clearTimeout(timeoutId);
+            }, []);
+
+            // Fonction pour vérifier le chevauchement (simplifiée)
+            function isOverlapping(newPosition) {
+                // Simplification : Étant donné que les images sont réparties aléatoirement,
+                // et de petite taille, le chevauchement complet est peu probable.
+                // Pour une détection précise, il faudrait conserver les positions des autres images.
+                return false;
+            }
+
+            return (
+                <img
+                    src={src}
+                    alt={`Fixed Element ${index + 1}`}
+                    className="fixed-element"
+                    style={{
+                        ...position,
+                        opacity: visible ? 1 : 0,
+                        filter: visible ? 'blur(0px)' : 'blur(10px)',
+                    }}
+                />
+            );
+        }
+
+        function getRandomPosition() {
+            const top = Math.floor(Math.random() * 80) + '%'; // Entre 0% et 80%
+            const left = Math.floor(Math.random() * 80) + '%'; // Entre 0% et 80%
+            return {
+                top: top,
+                left: left,
+            };
+        }
+
+        function Header() {
+            return (
+                <header className="header">
+                    <h1>JAMAL MONTGOMERY</h1>
+                    <h2>Directeur Artistique</h2>
+                    <h3>Voodoo Food digger</h3>
+                    <h4>Based in Marseille, shaped by its esoteric forces</h4>
+                </header>
+            );
+        }
+
+        function Gallery() {
+            const allImages = [
+                'https://cdn.midjourney.com/9ce22e9e-7234-411d-9361-be73d7bec66d/0_2.png',
+                'https://cdn.midjourney.com/58080eca-ffe2-43cb-90e9-697fec683c2e/0_0.png',
+                'https://cdn.midjourney.com/14789a1b-7e14-4ce3-9ae4-68e6a6500753/0_2.png',
+                'https://cdn.midjourney.com/67212dae-346f-48fa-a657-318d0623adc2/0_0.png',
+                'https://cdn.midjourney.com/446a9c61-0684-4a79-92ee-cf9fff592387/0_1.png',
+                'https://cdn.midjourney.com/f6a9a895-2b63-4852-bb11-536897f4d4fd/0_2.png',
+                'https://cdn.midjourney.com/5de641ef-176e-4e0f-a56a-39ac270544b3/0_1.png',
+                'https://cdn.midjourney.com/7aa9291b-57ae-4ed0-858d-7ecd8d3097ce/0_1.png',
+                'https://cdn.midjourney.com/f346355f-44f5-435e-87ea-ac4f7129ff03/0_2.png',
+                // Anciennes images
+                'https://cdn.midjourney.com/019c1847-fc59-4fbb-be7c-6618fc46c5b9/0_0.png',
+                'https://cdn.midjourney.com/d3ee91e2-61c8-44c2-87f0-d0390e43ebf8/0_3.png',
+                'https://cdn.midjourney.com/d613cd4c-09f6-4826-9369-5a47086b8533/0_3.png',
+                'https://cdn.midjourney.com/ae90ab8c-612f-4904-98cc-c5dd3493e10b/0_1.png'
+            ];
+
+            const numImagesToDisplay = 8; // Nombre d'images à afficher
+            const [currentImages, setCurrentImages] = React.useState([]);
+
+            React.useEffect(() => {
+                // Sélection initiale des images
+                const initialImages = [];
+                const usedIndices = new Set();
+                while (initialImages.length < numImagesToDisplay && usedIndices.size < allImages.length) {
+                    const index = Math.floor(Math.random() * allImages.length);
+                    if (!usedIndices.has(index)) {
+                        usedIndices.add(index);
+                        initialImages.push(allImages[index]);
+                    }
+                }
+                setCurrentImages(initialImages);
+
+                // Configuration de l'intervalle pour changer les images
+                const interval = setInterval(() => {
+                    setCurrentImages(prevImages => {
+                        const newImages = [...prevImages];
+                        const replaceIndex = Math.floor(Math.random() * newImages.length);
+
+                        // Trouver une nouvelle image qui n'est pas déjà affichée
+                        const availableImages = allImages.filter(img => !newImages.includes(img));
+                        if (availableImages.length === 0) {
+                            // Réinitialiser la liste des images disponibles
+                            return newImages;
+                        }
+                        const newImage = availableImages[Math.floor(Math.random() * availableImages.length)];
+
+                        newImages[replaceIndex] = newImage;
+
+                        return newImages;
+                    });
+                }, 5000); // Changer une image toutes les 5 secondes
+
+                return () => clearInterval(interval);
+            }, []);
+
+            return (
+                <div className="gallery">
+                    {currentImages.map((src, index) => (
+                        <Image key={index} src={src} alt={`Artwork ${index + 1}`} index={index} />
+                    ))}
+                </div>
+            );
+        }
+
+        function Image({ src, alt, index }) {
+            const [visible, setVisible] = React.useState(false);
+
+            React.useEffect(() => {
+                setVisible(true);
+                return () => setVisible(false);
+            }, [src]);
+
+            return (
+                <img
+                    src={src}
+                    alt={alt}
+                    style={{
+                        opacity: visible ? 1 : 0,
+                        transition: 'opacity 1s ease-in-out',
+                        transform: `rotate(${(index % 2 === 0 ? '-' : '') + Math.floor(Math.random() * 10)}deg)`
+                    }}
+                />
+            );
+        }
+
+        function Footer() {
+            return (
+                <footer className="footer">
+                    <p>© {new Date().getFullYear()} JAMAL MONTGOMERY</p>
+                </footer>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
