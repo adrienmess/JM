@@ -39,6 +39,7 @@
             box-sizing: border-box;
             text-align: center;
             position: relative;
+            overflow: hidden; /* Pour contenir les images positionnées absolument */
         }
 
         .header h1 {
@@ -109,21 +110,19 @@
             color: #777;
         }
 
-        /* Styles pour les éléments fixes en superposition */
-        .fixed-element {
-            position: fixed;
-            z-index: 9999;
-            width: 20%; /* Augmentation de la taille */
+        /* Styles pour les éléments animés dans le header */
+        .header .animated-element {
+            position: absolute;
+            width: 20%; /* Taille ajustée */
             opacity: 0;
             pointer-events: none;
             transition: opacity 1s ease-in-out, filter 1s ease-in-out;
             filter: blur(10px);
         }
 
-        /* Ajustement pour les appareils mobiles */
         @media (max-width: 768px) {
-            .fixed-element {
-                width: 35%; /* Augmenter la taille sur les petits écrans */
+            .header .animated-element {
+                width: 35%; /* Taille sur les petits écrans */
             }
         }
     </style>
@@ -140,173 +139,11 @@
         function App() {
             return (
                 <div className="container">
-                    <FixedElements />
                     <Header />
                     <Gallery />
                     <Footer />
                 </div>
             );
-        }
-
-        function FixedElements() {
-            const fixedImages = [
-                'https://www.zupimages.net/up/24/41/3ln2.png',
-                'https://www.zupimages.net/up/24/41/5vx9.png',
-                'https://www.zupimages.net/up/24/41/hjak.png',
-                'https://www.zupimages.net/up/24/41/mnyg.png'
-            ];
-
-            const positionsRef = React.useRef([]);
-
-            function getNonOverlappingPosition() {
-                let newPosition;
-                let attempts = 0;
-                do {
-                    newPosition = getRandomPosition();
-                    attempts++;
-                } while (positionsRef.current.some(pos => isOverlapping(pos, newPosition)) && attempts < 10);
-                return newPosition;
-            }
-
-            function addPosition(position) {
-                positionsRef.current.push(position);
-            }
-
-            function removePosition(position) {
-                positionsRef.current = positionsRef.current.filter(pos => pos !== position);
-            }
-
-            return (
-                <>
-                    {fixedImages.map((src, index) => (
-                        <FixedImage
-                            key={index}
-                            src={src}
-                            index={index}
-                            total={fixedImages.length}
-                            getNonOverlappingPosition={getNonOverlappingPosition}
-                            addPosition={addPosition}
-                            removePosition={removePosition}
-                        />
-                    ))}
-                </>
-            );
-        }
-
-        function FixedImage({ src, index, total, getNonOverlappingPosition, addPosition, removePosition }) {
-            const [position, setPosition] = React.useState({});
-            const [visible, setVisible] = React.useState(false);
-
-            React.useEffect(() => {
-                let timeoutId;
-                let currentPosition;
-
-                function showImage() {
-                    let attempts = 0;
-                    do {
-                        currentPosition = getNonOverlappingPosition();
-                        attempts++;
-                    } while (attempts < 10 && !currentPosition);
-
-                    if (currentPosition) {
-                        setPosition(currentPosition);
-                        addPosition(currentPosition);
-                        setVisible(true);
-
-                        const visibleDuration = Math.random() * 2000 + 3000;
-                        setTimeout(() => {
-                            setVisible(false);
-                            removePosition(currentPosition);
-                            const invisibleDuration = Math.random() * 3000 + 2000;
-                            timeoutId = setTimeout(showImage, invisibleDuration);
-                        }, visibleDuration);
-                    }
-                }
-
-                const initialDelay = index * 1000;
-                timeoutId = setTimeout(showImage, initialDelay);
-
-                return () => {
-                    clearTimeout(timeoutId);
-                    removePosition(position);
-                };
-            }, []);
-
-            return (
-                <img
-                    src={src}
-                    alt={`Fixed Element ${index + 1}`}
-                    className="fixed-element"
-                    style={{
-                        ...position,
-                        opacity: visible ? 1 : 0,
-                        filter: visible ? 'blur(0px)' : 'blur(10px)',
-                    }}
-                />
-            );
-        }
-
-        function getRandomPosition() {
-            const top = Math.floor(Math.random() * 80) + '%'; // Entre 0% et 80%
-            const left = Math.floor(Math.random() * 80) + '%'; // Entre 0% et 80%
-            return {
-                top: top,
-                left: left,
-            };
-        }
-
-        function isOverlapping(pos1, pos2) {
-            const size = getSizePercentage(); // Taille en pourcentage
-            const screenWidth = window.innerWidth;
-            const screenHeight = window.innerHeight;
-
-            const width = screenWidth * (size / 100);
-            const height = width; // Supposons que les images sont carrées
-
-            const rect1 = getRectFromPosition(pos1, width, height);
-            const rect2 = getRectFromPosition(pos2, width, height);
-
-            return !(
-                rect1.right < rect2.left ||
-                rect1.left > rect2.right ||
-                rect1.bottom < rect2.top ||
-                rect1.top > rect2.bottom
-            );
-        }
-
-        function getRectFromPosition(pos, width, height) {
-            let top = 0, left = 0;
-            if (pos.top !== undefined) {
-                if (typeof pos.top === 'string' && pos.top.endsWith('%')) {
-                    top = (parseFloat(pos.top) / 100) * window.innerHeight;
-                } else {
-                    top = parseFloat(pos.top);
-                }
-            }
-
-            if (pos.left !== undefined) {
-                if (typeof pos.left === 'string' && pos.left.endsWith('%')) {
-                    left = (parseFloat(pos.left) / 100) * window.innerWidth;
-                } else {
-                    left = parseFloat(pos.left);
-                }
-            }
-
-            return {
-                top: top,
-                left: left,
-                bottom: top + height,
-                right: left + width,
-            };
-        }
-
-        function getSizePercentage() {
-            const screenWidth = window.innerWidth;
-            if (screenWidth <= 768) {
-                return 35; // Taille sur mobile
-            } else {
-                return 20; // Taille sur écran plus large
-            }
         }
 
         function Header() {
@@ -316,7 +153,74 @@
                     <h2>Directeur Artistique</h2>
                     <h3>Voodoo Food Digger.</h3>
                     <h4>Based in Marseille, shaped by its esoteric forces.</h4>
+                    <AnimatedElements />
                 </header>
+            );
+        }
+
+        function AnimatedElements() {
+            const images = [
+                'https://www.zupimages.net/up/24/41/3ln2.png',
+                'https://www.zupimages.net/up/24/41/5vx9.png',
+                'https://www.zupimages.net/up/24/41/hjak.png',
+                'https://www.zupimages.net/up/24/41/mnyg.png'
+            ];
+
+            const [elements, setElements] = React.useState([]);
+
+            React.useEffect(() => {
+                images.forEach((src, index) => {
+                    const delay = index * 1000; // Démarrage échelonné
+                    setTimeout(() => {
+                        animateElement(src);
+                    }, delay);
+                });
+            }, []);
+
+            function animateElement(src) {
+                const durationVisible = Math.random() * 2000 + 3000; // 3 à 5 secondes
+                const durationHidden = Math.random() * 3000 + 2000; // 2 à 5 secondes
+
+                const element = {
+                    id: Math.random(),
+                    src: src,
+                    style: getRandomPosition(),
+                    visible: true,
+                };
+
+                setElements(prev => [...prev, element]);
+
+                setTimeout(() => {
+                    setElements(prev => prev.filter(e => e.id !== element.id));
+                    setTimeout(() => {
+                        animateElement(src);
+                    }, durationHidden);
+                }, durationVisible);
+            }
+
+            function getRandomPosition() {
+                return {
+                    top: Math.floor(Math.random() * 80) + '%', // Entre 0% et 80%
+                    left: Math.floor(Math.random() * 80) + '%', // Entre 0% et 80%
+                };
+            }
+
+            return (
+                <>
+                    {elements.map(element => (
+                        <img
+                            key={element.id}
+                            src={element.src}
+                            alt="Animated Element"
+                            className="animated-element"
+                            style={{
+                                ...element.style,
+                                opacity: element.visible ? 1 : 0,
+                                filter: element.visible ? 'blur(0px)' : 'blur(10px)',
+                            }}
+                        />
+                    ))}
+                </>
             );
         }
 
@@ -376,7 +280,7 @@
 
                         return newImages;
                     });
-                }, 5000); // Changer une image toutes les 5 secondes
+                }, 2500); // Changer une image toutes les 2,5 secondes
 
                 return () => clearInterval(interval);
             }, []);
