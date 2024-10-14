@@ -147,18 +147,20 @@
         }
 
         function Header() {
+            const headerRef = React.useRef(null);
+
             return (
-                <header className="header">
+                <header className="header" ref={headerRef}>
                     <h1>JAMAL MONTGOMERY</h1>
                     <h2>Directeur Artistique</h2>
                     <h3>Voodoo Food Digger.</h3>
                     <h4>Based in Marseille, shaped by its esoteric forces.</h4>
-                    <AnimatedElements />
+                    <AnimatedElements headerRef={headerRef} />
                 </header>
             );
         }
 
-        function AnimatedElements() {
+        function AnimatedElements({ headerRef }) {
             const images = [
                 'https://www.zupimages.net/up/24/41/3ln2.png',
                 'https://www.zupimages.net/up/24/41/5vx9.png',
@@ -184,9 +186,17 @@
                 const element = {
                     id: Math.random(),
                     src: src,
-                    style: getRandomPosition(),
+                    style: {},
                     visible: true,
                 };
+
+                function updatePosition() {
+                    const position = getRandomPosition();
+                    element.style = position;
+                    setElements(prev => [...prev.filter(e => e.id !== element.id), element]);
+                }
+
+                updatePosition();
 
                 setElements(prev => [...prev, element]);
 
@@ -199,10 +209,37 @@
             }
 
             function getRandomPosition() {
-                return {
-                    top: Math.floor(Math.random() * 80) + '%', // Entre 0% et 80%
-                    left: Math.floor(Math.random() * 80) + '%', // Entre 0% et 80%
-                };
+                const header = headerRef.current;
+                if (header) {
+                    const headerRect = header.getBoundingClientRect();
+                    const headerHeight = headerRect.height;
+                    const headerWidth = headerRect.width;
+
+                    // Get the image dimensions
+                    const imageWidthPercentage = window.innerWidth <= 768 ? 35 : 20;
+                    const imageWidth = headerWidth * (imageWidthPercentage / 100);
+
+                    // Assume images are square
+                    const imageHeight = imageWidth;
+
+                    // Calculate max top and left positions
+                    const maxTop = headerHeight - imageHeight;
+                    const maxLeft = headerWidth - imageWidth;
+
+                    const top = Math.random() * maxTop;
+                    const left = Math.random() * maxLeft;
+
+                    return {
+                        top: top + 'px',
+                        left: left + 'px',
+                    };
+                } else {
+                    // Fallback if headerRef est indisponible
+                    return {
+                        top: '0px',
+                        left: '0px',
+                    };
+                }
             }
 
             return (
@@ -246,6 +283,12 @@
                 'https://cdn.midjourney.com/ae90ab8c-612f-4904-98cc-c5dd3493e10b/0_1.png'
             ];
 
+            const restrictedImages = [
+                'https://www.zupimages.net/up/24/42/qmbc.png',
+                'https://www.zupimages.net/up/24/42/7ufu.png',
+                'https://www.zupimages.net/up/24/42/batj.png'
+            ];
+
             const numImagesToDisplay = 8; // Nombre d'images à afficher
             const [currentImages, setCurrentImages] = React.useState([]);
 
@@ -253,11 +296,28 @@
                 // Sélection initiale des images
                 const initialImages = [];
                 const usedIndices = new Set();
+                let restrictedImageIncluded = false;
+
                 while (initialImages.length < numImagesToDisplay && usedIndices.size < allImages.length) {
                     const index = Math.floor(Math.random() * allImages.length);
                     if (!usedIndices.has(index)) {
-                        usedIndices.add(index);
-                        initialImages.push(allImages[index]);
+                        const selectedImage = allImages[index];
+                        const isRestricted = restrictedImages.includes(selectedImage);
+
+                        if (isRestricted) {
+                            if (!restrictedImageIncluded) {
+                                // Inclure une image restreinte
+                                restrictedImageIncluded = true;
+                                usedIndices.add(index);
+                                initialImages.push(selectedImage);
+                            } else {
+                                // Ignorer cette image restreinte
+                                continue;
+                            }
+                        } else {
+                            usedIndices.add(index);
+                            initialImages.push(selectedImage);
+                        }
                     }
                 }
                 setCurrentImages(initialImages);
@@ -268,19 +328,35 @@
                         const newImages = [...prevImages];
                         const replaceIndex = Math.floor(Math.random() * newImages.length);
 
-                        // Trouver une nouvelle image qui n'est pas déjà affichée
-                        const availableImages = allImages.filter(img => !newImages.includes(img));
+                        // Retirer l'image à replaceIndex
+                        const removedImage = newImages[replaceIndex];
+
+                        // Créer une liste d'images disponibles
+                        let availableImages = allImages.filter(img => !newImages.includes(img));
+
+                        // Vérifier si des images restreintes sont déjà affichées
+                        const restrictedImagesDisplayed = newImages.filter(img => restrictedImages.includes(img));
+
+                        if (restrictedImagesDisplayed.length >= 1) {
+                            // Ne pas sélectionner d'images restreintes
+                            availableImages = availableImages.filter(img => !restrictedImages.includes(img));
+                        } else {
+                            // Permettre les images restreintes
+                            // Mais n'en inclure qu'une seule
+                        }
+
                         if (availableImages.length === 0) {
-                            // Réinitialiser la liste des images disponibles
+                            // Pas d'images disponibles, retourner les images actuelles
                             return newImages;
                         }
+
                         const newImage = availableImages[Math.floor(Math.random() * availableImages.length)];
 
                         newImages[replaceIndex] = newImage;
 
                         return newImages;
                     });
-                }, 2500); // Changer une image toutes les 2,5 secondes
+                }, 1500); // Changer une image toutes les 1,5 secondes
 
                 return () => clearInterval(interval);
             }, []);
