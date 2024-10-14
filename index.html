@@ -171,38 +171,39 @@
             const [elements, setElements] = React.useState([]);
 
             React.useEffect(() => {
+                const timeouts = [];
+
                 images.forEach((src, index) => {
                     const delay = index * 1000; // Démarrage échelonné
-                    setTimeout(() => {
+                    const timeoutId = setTimeout(() => {
                         animateElement(src);
                     }, delay);
+                    timeouts.push(timeoutId);
                 });
+
+                return () => {
+                    timeouts.forEach(timeout => clearTimeout(timeout));
+                };
             }, []);
 
             function animateElement(src) {
                 const durationVisible = Math.random() * 2000 + 3000; // 3 à 5 secondes
                 const durationHidden = Math.random() * 3000 + 2000; // 2 à 5 secondes
 
+                const id = Math.random().toString(36).substr(2, 9);
+
                 const element = {
-                    id: Math.random(),
+                    id: id,
                     src: src,
-                    style: {},
+                    style: getRandomPosition(),
                     visible: true,
                 };
 
-                function updatePosition() {
-                    const position = getRandomPosition();
-                    element.style = position;
-                    setElements(prev => [...prev.filter(e => e.id !== element.id), element]);
-                }
-
-                updatePosition();
-
                 setElements(prev => [...prev, element]);
 
-                setTimeout(() => {
-                    setElements(prev => prev.filter(e => e.id !== element.id));
-                    setTimeout(() => {
+                const hideTimeout = setTimeout(() => {
+                    setElements(prev => prev.filter(e => e.id !== id));
+                    const showTimeout = setTimeout(() => {
                         animateElement(src);
                     }, durationHidden);
                 }, durationVisible);
@@ -234,7 +235,7 @@
                         left: left + 'px',
                     };
                 } else {
-                    // Fallback if headerRef est indisponible
+                    // Valeurs par défaut si headerRef n'est pas disponible
                     return {
                         top: '0px',
                         left: '0px',
