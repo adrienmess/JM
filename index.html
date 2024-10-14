@@ -89,6 +89,7 @@
             height: auto;
             object-fit: cover;
             transition: opacity 1s ease-in-out;
+            cursor: pointer;
         }
 
         @media (min-width: 768px) {
@@ -124,6 +125,26 @@
             .header .animated-element {
                 width: 35%; /* Taille sur les petits écrans */
             }
+        }
+
+        /* Styles pour le plein écran */
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .fullscreen img {
+            max-width: 90%;
+            max-height: 90%;
+            cursor: pointer;
         }
     </style>
     <!-- Script pour désactiver le clic droit -->
@@ -201,9 +222,9 @@
 
                 setElements(prev => [...prev, element]);
 
-                const hideTimeout = setTimeout(() => {
+                setTimeout(() => {
                     setElements(prev => prev.filter(e => e.id !== id));
-                    const showTimeout = setTimeout(() => {
+                    setTimeout(() => {
                         animateElement(src);
                     }, durationHidden);
                 }, durationVisible);
@@ -264,27 +285,29 @@
 
         function Gallery() {
             const allImages = [
-                'https://cdn.midjourney.com/9ce22e9e-7234-411d-9361-be73d7bec66d/0_2.png',
-                'https://cdn.midjourney.com/58080eca-ffe2-43cb-90e9-697fec683c2e/0_0.png',
-                'https://cdn.midjourney.com/14789a1b-7e14-4ce3-9ae4-68e6a6500753/0_2.png',
-                'https://cdn.midjourney.com/67212dae-346f-48fa-a657-318d0623adc2/0_0.png',
-                'https://cdn.midjourney.com/446a9c61-0684-4a79-92ee-cf9fff592387/0_1.png',
-                'https://cdn.midjourney.com/f6a9a895-2b63-4852-bb11-536897f4d4fd/0_2.png',
-                'https://cdn.midjourney.com/5de641ef-176e-4e0f-a56a-39ac270544b3/0_1.png',
-                'https://www.zupimages.net/up/24/42/sylp.jpg',
-                'https://cdn.midjourney.com/f346355f-44f5-435e-87ea-ac4f7129ff03/0_2.png',
+                // Images spéciales
                 'https://www.zupimages.net/up/24/42/qmbc.png',
                 'https://www.zupimages.net/up/24/42/7ufu.png',
                 'https://www.zupimages.net/up/24/42/batj.png',
-                'https://www.zupimages.net/up/24/42/vyug.jpg',
-                // Anciennes images
-                'https://cdn.midjourney.com/019c1847-fc59-4fbb-be7c-6618fc46c5b9/0_0.png',
-                'https://cdn.midjourney.com/d3ee91e2-61c8-44c2-87f0-d0390e43ebf8/0_3.png',
-                'https://cdn.midjourney.com/d613cd4c-09f6-4826-9369-5a47086b8533/0_3.png',
-                'https://cdn.midjourney.com/ae90ab8c-612f-4904-98cc-c5dd3493e10b/0_1.png'
+                // Nouvelles images
+                'https://www.zupimages.net/up/24/42/d470.png',
+                'https://www.zupimages.net/up/24/42/2cjk.png',
+                'https://www.zupimages.net/up/24/42/pwwm.jpg',
+                'https://www.zupimages.net/up/24/42/roqr.jpg',
+                'https://www.zupimages.net/up/24/42/808q.jpg',
+                'https://www.zupimages.net/up/24/42/1utt.jpg',
+                'https://www.zupimages.net/up/24/42/sx5a.jpg',
+                'https://www.zupimages.net/up/24/42/un6z.jpg',
+                'https://www.zupimages.net/up/24/42/v3t7.jpg',
+                'https://www.zupimages.net/up/24/42/5moz.jpg',
+                'https://www.zupimages.net/up/24/42/rdoz.jpg',
+                'https://www.zupimages.net/up/24/42/ys71.jpg',
+                'https://www.zupimages.net/up/24/42/rpps.png',
+                'https://www.zupimages.net/up/24/42/z8l0.jpg',
+                'https://www.zupimages.net/up/24/42/15m4.jpg',
             ];
 
-            const restrictedImages = [
+            const specialImages = [
                 'https://www.zupimages.net/up/24/42/qmbc.png',
                 'https://www.zupimages.net/up/24/42/7ufu.png',
                 'https://www.zupimages.net/up/24/42/batj.png'
@@ -292,27 +315,28 @@
 
             const numImagesToDisplay = 8; // Nombre d'images à afficher
             const [currentImages, setCurrentImages] = React.useState([]);
+            const [fullscreenImage, setFullscreenImage] = React.useState(null);
 
             React.useEffect(() => {
                 // Sélection initiale des images
                 const initialImages = [];
                 const usedIndices = new Set();
-                let restrictedImageIncluded = false;
+                let specialImageIncluded = false;
 
                 while (initialImages.length < numImagesToDisplay && usedIndices.size < allImages.length) {
                     const index = Math.floor(Math.random() * allImages.length);
                     if (!usedIndices.has(index)) {
                         const selectedImage = allImages[index];
-                        const isRestricted = restrictedImages.includes(selectedImage);
+                        const isSpecial = specialImages.includes(selectedImage);
 
-                        if (isRestricted) {
-                            if (!restrictedImageIncluded) {
-                                // Inclure une image restreinte
-                                restrictedImageIncluded = true;
+                        if (isSpecial) {
+                            if (!specialImageIncluded) {
+                                // Inclure une image spéciale
+                                specialImageIncluded = true;
                                 usedIndices.add(index);
                                 initialImages.push(selectedImage);
                             } else {
-                                // Ignorer cette image restreinte
+                                // Ignorer cette image spéciale
                                 continue;
                             }
                         } else {
@@ -335,15 +359,14 @@
                         // Créer une liste d'images disponibles
                         let availableImages = allImages.filter(img => !newImages.includes(img));
 
-                        // Vérifier si des images restreintes sont déjà affichées
-                        const restrictedImagesDisplayed = newImages.filter(img => restrictedImages.includes(img));
+                        // Vérifier si des images spéciales sont déjà affichées
+                        const specialImagesDisplayed = newImages.filter(img => specialImages.includes(img));
 
-                        if (restrictedImagesDisplayed.length >= 1) {
-                            // Ne pas sélectionner d'images restreintes
-                            availableImages = availableImages.filter(img => !restrictedImages.includes(img));
+                        if (specialImagesDisplayed.length >= 1) {
+                            // Ne pas sélectionner d'images spéciales
+                            availableImages = availableImages.filter(img => !specialImages.includes(img));
                         } else {
-                            // Permettre les images restreintes
-                            // Mais n'en inclure qu'une seule
+                            // Inclure une image spéciale si aucune n'est affichée
                         }
 
                         if (availableImages.length === 0) {
@@ -362,16 +385,35 @@
                 return () => clearInterval(interval);
             }, []);
 
+            const handleImageClick = (src) => {
+                setFullscreenImage(src);
+            };
+
+            const handleFullscreenClick = () => {
+                setFullscreenImage(null);
+            };
+
             return (
-                <div className="gallery">
-                    {currentImages.map((src, index) => (
-                        <Image key={index} src={src} alt={`Artwork ${index + 1}`} index={index} />
-                    ))}
-                </div>
+                <>
+                    <div className="gallery">
+                        {currentImages.map((src, index) => (
+                            <Image
+                                key={index}
+                                src={src}
+                                alt={`Artwork ${index + 1}`}
+                                index={index}
+                                onClick={() => handleImageClick(src)}
+                            />
+                        ))}
+                    </div>
+                    {fullscreenImage && (
+                        <FullscreenImage src={fullscreenImage} onClick={handleFullscreenClick} />
+                    )}
+                </>
             );
         }
 
-        function Image({ src, alt, index }) {
+        function Image({ src, alt, index, onClick }) {
             const [visible, setVisible] = React.useState(false);
 
             React.useEffect(() => {
@@ -383,12 +425,28 @@
                 <img
                     src={src}
                     alt={alt}
+                    onClick={onClick}
                     style={{
                         opacity: visible ? 1 : 0,
                         transition: 'opacity 1s ease-in-out',
                         transform: `rotate(${(index % 2 === 0 ? '-' : '') + Math.floor(Math.random() * 10)}deg)`
                     }}
                 />
+            );
+        }
+
+        function FullscreenImage({ src, onClick }) {
+            const colors = ['green', 'yellow', 'red', 'blue'];
+            const [backgroundColor] = React.useState(colors[Math.floor(Math.random() * colors.length)]);
+
+            return (
+                <div
+                    className="fullscreen"
+                    onClick={onClick}
+                    style={{ backgroundColor: backgroundColor }}
+                >
+                    <img src={src} alt="Fullscreen" />
+                </div>
             );
         }
 
